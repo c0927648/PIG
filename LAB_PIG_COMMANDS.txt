@@ -1,0 +1,71 @@
+1. Load the dataset into Pig, defining an appropriate schema for the data
+
+
+purchase = LOAD '/user/maria_dev/customer_purchases.csv' USING PigStorage(',') AS(customer_id:int,purchase_date:chararray,product_id:int,product_name:chararray,quantity:int,total_amount:double);
+
+my_limit = LIMIT purchase 10;
+
+dump my_limit; 
+
+
+2. Calculate Total Purchase Amount per Customer: 
+
+group_customer = GROUP purchase BY customer_id;
+
+total_purchase = FOREACH group_customer GENERATE group AS customer_id, 
+SUM (purchase.total_amount) AS total_amount;
+
+***to dump with limit*
+
+limit_10 = LIMIT total_purchase 10;
+
+dump limit_10; 
+
+
+3. Find the Most Purchased Product:
+
+group_product = GROUP purchase BY (product_id, product_name);
+
+max_purchase = FOREACH group_product GENERATE group AS product_id, SUM (purchase.quantity) AS Total_Quantity;
+
+order_desc = ORDER max_purchase BY Total_Quantity DESC;
+
+4. Calculate Average Purchase Amount per Customer:
+
+group_customer = GROUP purchase  BY customer_id;
+
+avg_customer = FOREACH group_customer GENERATE group AS customer_id, AVG (purchase.total_amount) AS Average_Spending;
+
+
+5. Identify High-Value Customers - Determine customers who have made purchases with a total amount greater than $100.
+
+group_customer = GROUP purchase BY customer_id;
+
+filtered_data =  FILTER purchase BY total_amount >= 100;
+
+high_pay = FOREACH filtered_data GENERATE customer_id, total_amount;
+
+
+
+6. Sort Customers by Purchase Frequency: 
+
+group_customer = GROUP purchase BY customer_id;
+
+frequency= FOREACH group_customer GENERATE group AS customer_id, COUNT (purchase) AS total_pur;
+
+sorted = ORDER frequency by total_pur DESC;
+
+7.Generate a Report 
+
+customer ID, total purchase amount,most purchased product, average purchase amount, and whether the customer is a high-value customer.
+
+group_customer = GROUP purchase BY (customer_id,product_name);
+
+final_report = FOREACH group_customer GENERATE group AS customer_id, SUM (purchase.total_amount) AS Total_amount, SUM (purchase.quantity) AS Total_Quantity, AVG (purchase.total_amount) AS Average_Spending;
+
+without the product name:
+
+group_customer = GROUP purchase BY customer_id;
+
+
+
